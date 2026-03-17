@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kitchen Pro – High-Volume Kitchen Management</title>
+  <meta name="description" content="Professional kitchen management system for recipe storage, inventory tracking, recipe optimization, and analytics." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <!-- Leaflet.js for interactive maps -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+
+  <!-- Authentication Section -->
+  <section class="auth-section" id="auth-section">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <span class="logo-icon">🍽️</span>
+        <span class="logo-text">Kitchen<span class="accent">Pro</span></span>
+      </div>
+      
+      <div class="auth-tabs" id="auth-tabs">
+        <div class="auth-tab active" id="tab-login-admin" data-type="login" data-role="admin">Admin Login</div>
+        <div class="auth-tab" id="tab-login-customer" data-type="login" data-role="customer">Customer Login</div>
+        <div class="auth-tab" id="tab-signup-customer" data-type="signup" data-role="customer">Customer Sign Up</div>
+      </div>
+
+      <form class="auth-form" id="auth-form">
+        <div class="input-wrap" id="field-name" style="display:none">
+          <label for="auth-name">Full Name</label>
+          <input type="text" id="auth-name" class="auth-input" placeholder="Chef John" />
+        </div>
+        <div class="input-wrap">
+          <label for="auth-user">Email / Username</label>
+          <input type="text" id="auth-user" class="auth-input" placeholder="admin@kitchen.com" required />
+        </div>
+        <div class="input-wrap">
+          <label for="auth-pass" id="label-pass">Password</label>
+          <input type="password" id="auth-pass" class="auth-input" placeholder="••••••••" required />
+        </div>
+        <div class="input-wrap" id="field-confirm" style="display:none">
+          <label for="auth-confirm">Confirm Password</label>
+          <input type="password" id="auth-confirm" class="auth-input" placeholder="••••••••" />
+        </div>
+        
+        <div class="auth-footer">
+          <label class="remember-me">
+            <input type="checkbox" id="auth-remember" checked />
+            Remember Me
+          </label>
+        </div>
+
+        <div class="error-display" id="auth-error">Invalid credentials. Please try again.</div>
+
+        <button type="submit" class="btn btn-primary auth-btn">Login</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <span class="logo-icon">🍽️</span>
+        <span class="logo-text">Kitchen<span class="accent">Pro</span></span>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="#" class="nav-item active" data-page="dashboard" id="nav-dashboard">
+        <span class="nav-icon">📊</span>
+        <span class="nav-label">Dashboard</span>
+      </a>
+      <a href="#" class="nav-item" data-page="recipes" id="nav-recipes">
+        <span class="nav-icon">📋</span>
+        <span class="nav-label">Recipes</span>
+      </a>
+      <a href="#" class="nav-item" data-page="inventory" id="nav-inventory">
+        <span class="nav-icon">📦</span>
+        <span class="nav-label">Inventory</span>
+      </a>
+      <a href="#" class="nav-item" data-page="check-quality" id="nav-check-quality">
+        <span class="nav-icon">🔍</span>
+        <span class="nav-label">Check Quality</span>
+      </a>
+      <a href="#" class="nav-item" data-page="nearby-restaurants" id="nav-nearby-restaurants">
+        <span class="nav-icon">📍</span>
+        <span class="nav-label">Nearby Restaurants</span>
+      </a>
+      <a href="#" class="nav-item" data-page="rating" id="nav-rating">
+        <span class="nav-icon">⭐</span>
+        <span class="nav-label">Rating</span>
+      </a>
+      <a href="#" class="nav-item" data-page="suggestions" id="nav-suggestions">
+        <span class="nav-icon">✨</span>
+        <span class="nav-label">Suggestions</span>
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="kitchen-status">
+        <span class="status-dot online"></span>
+        <span class="status-label">Kitchen Active</span>
+      </div>
+      <button class="btn btn-ghost small" id="logout-btn" style="margin-top: 12px; width: 100%; justify-content: flex-start; gap: 10px;">
+        <span>🚪</span> Logout
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content" id="main-content">
+
+    <!-- Top Bar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <h1 class="page-title" id="page-title">Dashboard</h1>
+        <p class="page-subtitle" id="page-subtitle">Today's kitchen overview</p>
+      </div>
+      <div class="topbar-right">
+        <div class="search-bar" id="global-search-wrap" style="display:none">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="global-search" placeholder="Search..." />
+        </div>
+        <div class="topbar-time" id="topbar-time"></div>
+        <button class="btn btn-primary" id="topbar-action-btn" style="display:none">+ Add</button>
+      </div>
+    </header>
+
+    <!-- ════════ DASHBOARD PAGE ════════ -->
+    <section class="page active" id="page-dashboard">
+
+      <!-- KPI Cards -->
+      <div class="kpi-grid" id="kpi-grid">
+        <div class="kpi-card" id="kpi-recipes">
+          <div class="kpi-icon">📋</div>
+          <div class="kpi-content">
+            <div class="kpi-value" id="kpi-total-recipes">—</div>
+            <div class="kpi-label">Active Recipes</div>
+          </div>
+          <div class="kpi-trend up">↑ Live</div>
+        </div>
+        <div class="kpi-card warning" id="kpi-lowstock">
+          <div class="kpi-icon">⚠️</div>
+          <div class="kpi-content">
+            <div class="kpi-value" id="kpi-low-stock">—</div>
+            <div class="kpi-label">Low Stock Alerts</div>
+          </div>
+          <div class="kpi-trend" id="kpi-critical-badge">—</div>
+        </div>
+        <div class="kpi-card success" id="kpi-quality">
+          <div class="kpi-icon">⭐</div>
+          <div class="kpi-content">
+            <div class="kpi-value" id="kpi-avg-quality">—</div>
+            <div class="kpi-label">Avg Quality Score</div>
+          </div>
+          <div class="kpi-trend up">/ 10</div>
+        </div>
+        <div class="kpi-card info" id="kpi-consistency">
+          <div class="kpi-icon">🎯</div>
+          <div class="kpi-content">
+            <div class="kpi-value" id="kpi-avg-consistency">—</div>
+            <div class="kpi-label">Avg Consistency</div>
+          </div>
+          <div class="kpi-trend up">/ 10</div>
+        </div>
+        <div class="kpi-card" id="kpi-stockval">
+          <div class="kpi-icon">💰</div>
+          <div class="kpi-content">
+            <div class="kpi-value" id="kpi-stock-value">—</div>
+            <div class="kpi-label">Inventory Value</div>
+          </div>
+          <div class="kpi-trend up">Updated now</div>
+        </div>
+        <div class="kpi-card" id="kpi-ingredients">
+          <div class="kpi-icon">🧄</div>
+          <div class="kpi-content">
+            <div class="kpi-value" id="kpi-total-ingredients">—</div>
+            <div class="kpi-label">Total Ingredients</div>
+          </div>
+          <div class="kpi-trend up">Tracked</div>
+        </div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3>Recipe Categories</h3>
+            <span class="chart-badge">Breakdown</span>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="chart-categories"></canvas>
+          </div>
+        </div>
+        <div class="chart-card wide">
+          <div class="chart-header">
+            <h3>Top 5 Recipes by Quality</h3>
+            <span class="chart-badge">Ranked</span>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="chart-top-recipes"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Low Stock Alerts -->
+      <div class="section-card">
+        <div class="section-header">
+          <h3>⚠️ Low Stock Alerts</h3>
+          <button class="btn btn-ghost" onclick="navigateTo('inventory')">View All →</button>
+        </div>
+        <div class="alert-list" id="low-stock-list">
+          <div class="skeleton-row"></div>
+          <div class="skeleton-row"></div>
+          <div class="skeleton-row"></div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ════════ RECIPES PAGE ════════ -->
+    <section class="page" id="page-recipes">
+      <div class="filter-bar">
+        <div class="filter-pills" id="recipe-category-pills">
+          <button class="pill active" data-cat="">All</button>
+        </div>
+        <div class="filter-right">
+          <select id="recipe-sort" class="select-input">
+            <option value="name">Sort: Name</option>
+            <option value="quality">Sort: Quality</option>
+            <option value="consistency">Sort: Consistency</option>
+            <option value="time">Sort: Prep Time</option>
+          </select>
+        </div>
+      </div>
+      <div class="recipe-grid" id="recipe-grid">
+        <!-- Recipe cards injected here -->
+      </div>
+    </section>
+
+    <!-- ════════ INVENTORY PAGE ════════ -->
+    <section class="page" id="page-inventory">
+      <div class="filter-bar">
+        <div class="filter-pills" id="inv-category-pills">
+          <button class="pill active" data-cat="">All</button>
+        </div>
+        <div class="filter-right">
+          <select id="inv-status-filter" class="select-input">
+            <option value="">All Statuses</option>
+            <option value="ok">In Stock</option>
+            <option value="low">Low Stock</option>
+            <option value="critical">Critical</option>
+          </select>
+        </div>
+      </div>
+      <div class="table-card">
+        <table class="data-table" id="inventory-table">
+          <thead>
+            <tr>
+              <th>Ingredient</th>
+              <th>Category</th>
+              <th>Stock</th>
+              <th>Unit</th>
+              <th>Reorder Level</th>
+              <th>Cost/Unit</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="inventory-tbody">
+            <!-- rows injected -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ════════ SUGGESTIONS PAGE ════════ -->
+    <section class="page" id="page-suggestions">
+      <div class="suggestions-header">
+        <div class="suggestions-info">
+          <p>Recipes ranked by composite score: <strong>40% Quality</strong> · <strong>30% Consistency</strong> · <strong>30% Ingredient Availability</strong></p>
+        </div>
+        <div class="legend">
+          <span class="legend-item"><span class="dot green"></span> Ready to Make</span>
+          <span class="legend-item"><span class="dot amber"></span> Missing Items</span>
+        </div>
+      </div>
+      <div class="suggestion-grid" id="suggestion-grid">
+        <!-- Cards injected -->
+      </div>
+    </section>
+    
+    <!-- ════════ RATING PAGE ════════ -->
+    <section class="page" id="page-rating">
+      <div class="suggestions-header">
+        <div class="suggestions-info">
+          <p>Rate recipes based on your experience to help us maintain consistency and quality.</p>
+        </div>
+      </div>
+      <div class="recipe-grid" id="rating-recipe-grid">
+        <!-- Rating cards injected here -->
+      </div>
+    </section>
+
+    <!-- ════════ NEARBY RESTAURANTS PAGE ════════ -->
+    <section class="page" id="page-nearby-restaurants">
+      <div class="restaurants-header">
+        <div class="restaurants-info">
+          <h2>Local Partner Explorer</h2>
+          <p>Discover and collaborate with nearby kitchens and suppliers.</p>
+        </div>
+      </div>
+
+      <!-- Restaurant Top Navigation Bar -->
+      <div class="restaurant-top-nav">
+        <div class="res-nav-filters">
+          <button class="res-nav-btn active" onclick="filterByCuisine('All')">All</button>
+          <button class="res-nav-btn" onclick="filterByCuisine('French')">French</button>
+          <button class="res-nav-btn" onclick="filterByCuisine('Indian')">Indian</button>
+          <button class="res-nav-btn" onclick="filterByCuisine('Japanese')">Japanese</button>
+          <button class="res-nav-btn" onclick="filterByCuisine('Italian')">Italian</button>
+          <button class="res-nav-btn" onclick="filterByCuisine('American')">American</button>
+        </div>
+        <div class="res-nav-right">
+          <select id="country-filter" class="select-input" onchange="filterByCountry(this.value)">
+            <option value="All">🌍 All Countries</option>
+          </select>
+          <div class="res-nav-search">
+            <span class="search-icon">🔍</span>
+            <input type="text" placeholder="Search partners..." id="res-search-input" onkeyup="searchRestaurants(this.value)" />
+          </div>
+        </div>
+      </div>
+
+      <div class="restaurant-tabs">
+          <button class="res-tab active" onclick="switchResTab('list')">📋 List View</button>
+          <button class="res-tab" onclick="switchResTab('map')">🗺️ Map Explorer</button>
+          <button class="res-tab" onclick="switchResTab('deals')">🎁 Partner Deals</button>
+        </div>
+      </div>
+
+      <!-- View Containers -->
+      <div id="res-view-list" class="res-view active">
+        <div class="restaurant-grid" id="restaurant-grid">
+          <!-- Restaurant cards injected here -->
+        </div>
+      </div>
+
+      <div id="res-view-map" class="res-view">
+        <div class="map-wrapper">
+          <div class="map-toolbar">
+            <span class="map-toolbar-icon">🗺️</span>
+            <span class="map-toolbar-title">Live Proximity Explorer</span>
+            <span class="map-toolbar-status"><span class="status-dot online"></span> Real-time</span>
+          </div>
+          <div id="leaflet-map"></div>
+          <div class="map-legend">
+            <div class="legend-item"><span class="legend-marker" style="background:#f59e0b"></span> Fine Dining</div>
+            <div class="legend-item"><span class="legend-marker" style="background:#10b981"></span> Casual / Eco</div>
+            <div class="legend-item"><span class="legend-marker" style="background:#3b82f6"></span> Specialty</div>
+            <div class="legend-item"><span class="legend-marker" style="background:#ef4444"></span> Fast Food</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="res-view-deals" class="res-view">
+        <div class="deals-grid" id="deals-grid">
+          <!-- Deals injected here -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════ CHECK QUALITY PAGE ════════ -->
+    <section class="page" id="page-check-quality">
+      <div class="analysis-container">
+        <div class="upload-section">
+          <div class="upload-card" id="drop-zone">
+            <div class="upload-icon">📸</div>
+            <h3>Upload Food Image</h3>
+            <p>Drag and drop or click to analyze food quality</p>
+            <input type="file" id="food-image-input" accept="image/*" hidden />
+            <button class="btn btn-primary" onclick="document.getElementById('food-image-input').click()">Select Image</button>
+          </div>
+          
+          <div class="preview-card" id="image-preview-wrap" style="display:none">
+            <img id="food-preview" src="" alt="Food Preview" />
+            <div class="preview-overlay">
+              <button class="btn btn-danger small" onclick="resetUpload()">Remove</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="results-section" id="analysis-results" style="display:none">
+          <div class="section-card">
+            <div class="section-header">
+              <h3>✨ AI Quality Analysis</h3>
+              <span class="status-badge ok" id="analysis-status">Healthy</span>
+            </div>
+            <div class="analysis-grid">
+              <div class="analysis-item">
+                <div class="analysis-label">Freshness Score</div>
+                <div class="analysis-value" id="val-freshness">--</div>
+              </div>
+              <div class="analysis-item">
+                <div class="analysis-label">Safety Compliance</div>
+                <div class="analysis-value" id="val-safety">--</div>
+              </div>
+              <div class="analysis-item">
+                <div class="analysis-label">Spoilage Risk</div>
+                <div class="analysis-value" id="val-risk">--</div>
+              </div>
+            </div>
+            <div class="analysis-details" id="analysis-details">
+              Scanning pixels for texture and color anomalies...
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ════════ MODALS ════════ -->
+
+  <!-- Recipe Modal -->
+  <div class="modal-overlay" id="recipe-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="recipe-modal-title">Add Recipe</h2>
+        <button class="modal-close" onclick="closeModal('recipe-modal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <form id="recipe-form" class="form-grid">
+          <input type="hidden" id="rf-id" />
+          <div class="form-group full">
+            <label>Recipe Name</label>
+            <input type="text" id="rf-name" required placeholder="e.g. Grilled Herb Chicken" />
+          </div>
+          <div class="form-group">
+            <label>Category</label>
+            <select id="rf-category"></select>
+          </div>
+          <div class="form-group">
+            <label>Servings</label>
+            <input type="number" id="rf-servings" min="1" value="4" />
+          </div>
+          <div class="form-group">
+            <label>Prep Time (min)</label>
+            <input type="number" id="rf-prep" min="0" value="15" />
+          </div>
+          <div class="form-group">
+            <label>Cook Time (min)</label>
+            <input type="number" id="rf-cook" min="0" value="30" />
+          </div>
+          <div class="form-group">
+            <label>Quality Score (0–10)</label>
+            <input type="number" id="rf-quality" min="0" max="10" step="0.1" value="8.0" />
+          </div>
+          <div class="form-group">
+            <label>Consistency Rating (0–10)</label>
+            <input type="number" id="rf-consistency" min="0" max="10" step="0.1" value="8.0" />
+          </div>
+          <div class="form-group full">
+            <label>Instructions</label>
+            <textarea id="rf-instructions" rows="4" placeholder="Step-by-step cooking instructions..."></textarea>
+          </div>
+          <!-- Ingredients Section -->
+          <div class="form-group full">
+            <div class="ing-header">
+              <label>Ingredients</label>
+              <button type="button" class="btn btn-ghost small" onclick="addIngredientRow()">+ Add</button>
+            </div>
+            <div id="rf-ingredients-list"></div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal('recipe-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitRecipeForm()">Save Recipe</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Inventory Edit Modal -->
+  <div class="modal-overlay" id="inventory-modal">
+    <div class="modal small">
+      <div class="modal-header">
+        <h2>Update Stock</h2>
+        <button class="modal-close" onclick="closeModal('inventory-modal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <form id="inventory-form" class="form-grid">
+          <input type="hidden" id="if-id" />
+          <div class="form-group full">
+            <label>Ingredient</label>
+            <input type="text" id="if-name" readonly />
+          </div>
+          <div class="form-group">
+            <label>Current Stock</label>
+            <input type="number" id="if-stock" min="0" step="0.01" />
+          </div>
+          <div class="form-group">
+            <label>Reorder Level</label>
+            <input type="number" id="if-reorder" min="0" step="0.01" />
+          </div>
+          <div class="form-group">
+            <label>Cost per Unit</label>
+            <input type="number" id="if-cost" min="0" step="0.01" />
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal('inventory-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitInventoryForm()">Update</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Ingredient Modal -->
+  <div class="modal-overlay" id="add-ingredient-modal">
+    <div class="modal small">
+      <div class="modal-header">
+        <h2>Add Ingredient</h2>
+        <button class="modal-close" onclick="closeModal('add-ingredient-modal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <form id="add-ingredient-form" class="form-grid">
+          <div class="form-group full">
+            <label>Name</label>
+            <input type="text" id="ai-name" required placeholder="e.g. Cherry Tomatoes" />
+          </div>
+          <div class="form-group">
+            <label>Unit</label>
+            <select id="ai-unit">
+              <option value="g">g (grams)</option>
+              <option value="kg">kg (kilograms)</option>
+              <option value="mL">mL (millilitres)</option>
+              <option value="L">L (litres)</option>
+              <option value="pcs">pcs (pieces)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Category</label>
+            <select id="ai-category">
+              <option>Proteins</option>
+              <option>Vegetables</option>
+              <option>Dairy</option>
+              <option>Dry Goods</option>
+              <option>Liquids</option>
+              <option>Herbs</option>
+              <option>Spices</option>
+              <option>General</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Stock Quantity</label>
+            <input type="number" id="ai-stock" min="0" step="0.01" value="0" />
+          </div>
+          <div class="form-group">
+            <label>Reorder Level</label>
+            <input type="number" id="ai-reorder" min="0" step="0.01" value="100" />
+          </div>
+          <div class="form-group">
+            <label>Cost per Unit</label>
+            <input type="number" id="ai-cost" min="0" step="0.01" value="0" />
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal('add-ingredient-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitAddIngredient()">Add Ingredient</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Restaurant Details Modal -->
+  <div class="modal-overlay" id="modal-restaurant">
+    <div class="modal wide restaurant-modal">
+      <div class="modal-header">
+        <h2 id="modal-res-title">Restaurant Details</h2>
+        <button class="modal-close" onclick="closeModal('modal-restaurant')">✕</button>
+      </div>
+      <div class="modal-body" id="restaurant-detail-body">
+        <!-- Details injected here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
